@@ -99,6 +99,9 @@ start operation -->
 		<script src="plugin/markdown/markdown.js"></script>
 		<script src="plugin/highlight/highlight.js"></script>
 		<script>
+			const highlight_plugin = RevealHighlight();
+			highlight_plugin.hljs.configure({tabReplace: '   '})
+
 			// More info about initialization & config:
 			// - https://revealjs.com/initialization/
 			// - https://revealjs.com/config/
@@ -106,7 +109,7 @@ start operation -->
 				hash: true,
 
 				// Learn about plugins: https://revealjs.com/plugins/
-				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
+				plugins: [ RevealMarkdown, highlight_plugin, RevealNotes ]
 			});
 		</script>
 	</body>
