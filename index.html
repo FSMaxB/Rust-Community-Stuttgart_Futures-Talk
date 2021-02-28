@@ -16,8 +16,69 @@
 	<body>
 		<div class="reveal">
 			<div class="slides">
-				<section>Slide 1</section>
-				<section>Slide 2</section>
+				<section data-markdown>
+					<textarea data-template>
+						# Rust futures - an introduction
+
+						## *Max Bruckner*
+					</textarea>
+				</section>
+				<section data-markdown>
+					<textarea data-template>
+						## What is a *Future*
+
+						aka *Promise*
+
+						**A value that may or may not be yet available**
+					</textarea>
+				</section>
+				<section data-markdown>
+					<textarea data-template>
+						## Use-Case: Network-Requests
+
+```
+main thread     OS/network hardware
+fetch URL ---------->
+...                  |
+...                  |
+...                  |
+use fetched data <---
+```
+						* main thread can do other work in the meantime
+					</textarea>
+				</section>
+				<section data-markdown>
+					<textarea data-template>
+						## Use-Case: Computation
+
+```
+main thread     computation threadpool
+start computation -->
+...                  |
+...                  |
+...                  |
+use result <---------
+```
+						* main thread doesn't block (e.g. GUI thread)
+						* threadpool can be saturated with work
+					</textarea>
+				</section>
+				<section data-markdown>
+					<textarea data-template>
+						## Use-Case: Fire And Forget
+
+```
+main thread  |  some threadpool
+start operation -->
+...                 |
+...                 ▼
+...           once completed, finalize
+
+```
+						* main thread doesn't block (e.g. GUI thread)
+						* threadpool can be saturated with work
+					</textarea>
+				</section>
 			</div>
 		</div>
 
