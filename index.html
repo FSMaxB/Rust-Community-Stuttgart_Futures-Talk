@@ -16,79 +16,103 @@
 	<body>
 		<div class="reveal">
 			<div class="slides">
-				<section data-markdown>
-					<textarea data-template>
-						# Rust futures - an introduction
-
-						## *Max Bruckner*
-					</textarea>
+				<section>
+					<h1>Rust futures - an introduction</h1>
+					<h2><i>Max Bruckner</i></h2>
 				</section>
-				<section data-markdown>
-					<textarea data-template>
-						## What is a *Future*
-
-						aka *Promise*
-
-						**A value that may or may not be yet available**
-					</textarea>
+				<section>
+					<h2>What is a Future</h2>
+					<p>aka <em>Promise</em></p>
+					<p><b>A value that may or may not be yet available</b></p>
 				</section>
 
 
-                <section>
-					<section data-markdown>
-						<textarea data-template>
-							## Use-Case: Network-Requests
-
-```
-main thread     OS/network hardware
-fetch URL ---------->
-...                  |
-...                  |
-...                  |
-use fetched data <---
-```
-							* main thread can do other work in the meantime
-						</textarea>
+				<section>
+					<section>
+						<h2>Use-Case: Network-Requests</h2>
+						<pre><code data-trim data-noescape class="language-plaintext">
+							main thread     OS/network hardware
+							fetch URL ---------->
+							...                  |
+							...                  |
+							...                  |
+							use fetched data <---
+						</code></pre>
+						<ul>
+							<li>main thread can do other work in the meantime</li>
+						</ul>
 					</section>
 				</section>
 
 
 				<section>
-					<section data-markdown>
-						<textarea data-template>
-							## Use-Case: Computation
+					<section>
+						<h2>Use-Case: Computation</h2>
+						<pre><code data-trim data-noescape class="language-plaintext">
+							main thread     computation threadpool
+							start computation -->
+							...                  |
+							...                  |
+							...                  |
+							use result <---------
+						</code></pre>
+						<ul>
+							<li>main thread doesn't block (e.g. GUI thread)</li>
+							<li>threadpool can be saturated with work</li>
+						</ul>
+					</section>
+				</section>
 
-```
-main thread     computation threadpool
-start computation -->
-...                  |
-...                  |
-...                  |
-use result <---------
-```
-							* main thread doesn't block (e.g. GUI thread)
-							* threadpool can be saturated with work
-						</textarea>
+				<section>
+					<section data-markdown>
+						<h2>Use-Case: Fire And Forget</h2>
+						<pre><code data-trim data-noescape class="language-plaintext">
+							main thread  |  some threadpool
+							start operation -->
+							...                 |
+							...                 ▼
+							...           once completed, finalize
+						</code></pre>
+						<ul>
+							<li>main thread doesn't block (e.g. GUI thread)</li>
+							<li>threadpool can be saturated with work</li>
+						</ul>
 					</section>
 				</section>
 
 
 				<section>
-					<section data-markdown>
-						<textarea data-template>
-							## Use-Case: Fire And Forget
+					<section>
+						<h2>Terminology</h2>
+						<ul>
+							<li><b>Task</b></li>
+							<ul>
+								<li>lightweight thread</li>
+								<li>running future</li>
+							</ul>
+							<li><b>Executor</b></li>
+							<ul>
+								<li>task runner</li>
+							</ul>
+						</ul>
+					</section>
+				</section>
 
-```
-main thread  |  some threadpool
-start operation -->
-...                 |
-...                 ▼
-...           once completed, finalize
-
-```
-							* main thread doesn't block (e.g. GUI thread)
-							* threadpool can be saturated with work
-						</textarea>
+				<section>
+					<section>
+						<h2>Traditional implementation</h2>
+						<pre><code data-trim data-noescape class="language-rust" >
+							<script type="text/template">
+							fn download_url(url: Url, callback: impl FnOnce(Result)) {
+								//...
+							}
+							</script>
+						</code></pre>
+						<pre><code data-trim data-noescape class="language-rust" >
+							<script type="text/template">
+							download_url(url, |result| println!('{}', result));
+							</script>
+						</code></pre>
 					</section>
 				</section>
 			</div>
