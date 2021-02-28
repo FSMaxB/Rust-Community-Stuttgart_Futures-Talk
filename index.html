@@ -32,9 +32,12 @@
 						**A value that may or may not be yet available**
 					</textarea>
 				</section>
-				<section data-markdown>
-					<textarea data-template>
-						## Use-Case: Network-Requests
+
+
+                <section>
+					<section data-markdown>
+						<textarea data-template>
+							## Use-Case: Network-Requests
 
 ```
 main thread     OS/network hardware
@@ -44,12 +47,16 @@ fetch URL ---------->
 ...                  |
 use fetched data <---
 ```
-						* main thread can do other work in the meantime
-					</textarea>
+							* main thread can do other work in the meantime
+						</textarea>
+					</section>
 				</section>
-				<section data-markdown>
-					<textarea data-template>
-						## Use-Case: Computation
+
+
+				<section>
+					<section data-markdown>
+						<textarea data-template>
+							## Use-Case: Computation
 
 ```
 main thread     computation threadpool
@@ -59,13 +66,17 @@ start computation -->
 ...                  |
 use result <---------
 ```
-						* main thread doesn't block (e.g. GUI thread)
-						* threadpool can be saturated with work
-					</textarea>
+							* main thread doesn't block (e.g. GUI thread)
+							* threadpool can be saturated with work
+						</textarea>
+					</section>
 				</section>
-				<section data-markdown>
-					<textarea data-template>
-						## Use-Case: Fire And Forget
+
+
+				<section>
+					<section data-markdown>
+						<textarea data-template>
+							## Use-Case: Fire And Forget
 
 ```
 main thread  |  some threadpool
@@ -75,9 +86,10 @@ start operation -->
 ...           once completed, finalize
 
 ```
-						* main thread doesn't block (e.g. GUI thread)
-						* threadpool can be saturated with work
-					</textarea>
+							* main thread doesn't block (e.g. GUI thread)
+							* threadpool can be saturated with work
+						</textarea>
+					</section>
 				</section>
 			</div>
 		</div>
