@@ -22,97 +22,168 @@
 				</section>
 				<section>
 					<h2>What is a Future</h2>
-					<p>aka <em>Promise</em></p>
-					<p><b>A value that may or may not be yet available</b></p>
-				</section>
-
-
-				<section>
-					<section>
-						<h2>Use-Case: Network-Requests</h2>
-						<pre><code data-trim data-noescape class="language-plaintext">
-							main thread     OS/network hardware
-							fetch URL ---------->
-							...                  |
-							...                  |
-							...                  |
-							use fetched data <---
-						</code></pre>
-						<ul>
-							<li>main thread can do other work in the meantime</li>
-						</ul>
-					</section>
-				</section>
-
-
-				<section>
-					<section>
-						<h2>Use-Case: Computation</h2>
-						<pre><code data-trim data-noescape class="language-plaintext">
-							main thread     computation threadpool
-							start computation -->
-							...                  |
-							...                  |
-							...                  |
-							use result <---------
-						</code></pre>
-						<ul>
-							<li>main thread doesn't block (e.g. GUI thread)</li>
-							<li>threadpool can be saturated with work</li>
-						</ul>
-					</section>
-				</section>
-
-				<section>
-					<section data-markdown>
-						<h2>Use-Case: Fire And Forget</h2>
-						<pre><code data-trim data-noescape class="language-plaintext">
-							main thread  |  some threadpool
-							start operation -->
-							...                 |
-							...                 ▼
-							...           once completed, finalize
-						</code></pre>
-						<ul>
-							<li>main thread doesn't block (e.g. GUI thread)</li>
-							<li>threadpool can be saturated with work</li>
-						</ul>
-					</section>
-				</section>
-
-
-				<section>
-					<section>
-						<h2>Terminology</h2>
-						<ul>
-							<li><b>Task</b></li>
-							<ul>
-								<li>lightweight thread</li>
-								<li>running future</li>
-							</ul>
-							<li><b>Executor</b></li>
-							<ul>
-								<li>task runner</li>
-							</ul>
-						</ul>
-					</section>
+					<div class="fragment shrink" data-fragment-index="0">
+						<p><b>A representation of a value that may not be yet available but will in the <em>future</em>.</b></p>
+					</div>
+					<div class="fragment" data-fragment-index="0">
+						<p>aka <em>Promise</em></p>
+						<p><b>A <em>promise</em> that there will be a value, even if there is none yet.</b></p>
+					</div>
 				</section>
 
 				<section>
 					<section>
-						<h2>Traditional implementation</h2>
+						<h2>Example</h2>
+						<ol>
+							<li><em>download</em> image</li>
+							<li class="fragment"><em>convert</em> into different format</li>
+						</ol>
+					</section>
+					<section>
+						<h3>Synchronously</h3>
 						<pre><code data-trim data-noescape class="language-rust" >
 							<script type="text/template">
-							fn download_url(url: Url, callback: impl FnOnce(Result)) {
-								//...
+							fn fetch_and_convert(url: Url) -> Result {
+								let image = download(url);  // waiting for network
+								convert(image)              // CPU intensive
 							}
 							</script>
 						</code></pre>
-						<pre><code data-trim data-noescape class="language-rust" >
+					</section>
+					<section>
+						<h3>Synchronously</h3>
+						<pre class="fragment shrink" data-fragment-index="0"><code data-trim data-noescape class="language-plaintext" >
 							<script type="text/template">
-							download_url(url, |result| println!('{}', result));
+							download -------->
+							  ⌚              |
+							  ⌚              |
+							  ⌚            network
+							  ⌚              |
+							  ⌚ <------------+
+							conversion
+								🔥
+								🔥 cpu intensive work
+								🔥
+								✅
 							</script>
 						</code></pre>
+						<ul class="fragment" data-fragment-index="0">
+							<li>not bad so far</li>
+							<li>need to wait anyways(?)</li>
+							<li>might block though</li>
+						</ul>
+						<aside class="notes">
+							Might block GUI thread or server backend.
+						</aside>
+					</section>
+					<section>
+						<h3>Synchronous loop</h3>
+						<pre class="fragment shrink" data-fragment-index="0"><code data-trim data-noescape class="language-rust" >
+							<script type="text/template">
+							fn fetch_and_convert(url: Url) -> Result {
+								let image = download(url);  // waiting for network
+								convert(image)              // CPU intensive
+							}
+							</script>
+						</code></pre>
+						<pre class="fragment" data-fragment-index="0"><code data-trim data-noescape class="language-rust" >
+							<script type="text/template">
+							for url in urls.iter() {
+								fetch_and_convert(url);
+							}
+							</script>
+						</code></pre>
+					</section>
+					<section>
+						<h3>Synchronous loop</h3>
+						<pre><code data-trim data-noescape class="language-plaintext" >
+							<script type="text/template">
+							0 download -->
+							    ⌚        |
+							    ⌚ <------+
+							  conversion
+							    🔥
+							    ✅
+							1        download -->
+							           ⌚        |
+							           ⌚ <------+
+							           conversion
+							           🔥
+							           ✅
+							2               ⁞
+							</script>
+						</code></pre>
+					</section>
+					<section>
+						<h3>Threading</h3>
+						<pre class="fragment shrink" data-fragment-index="0"><code data-trim data-noescape class="language-rust" >
+							<script type="text/template">
+								let mut handles = Vec::new();
+
+								for url in urls.into_iter() {
+									handles.push(spawn(move || fetch_and_convert(url)));
+								}
+
+								handles.into_iter().for_each(JoinHandle::join);
+							</script>
+						</code></pre>
+						<div class="fragment shrink" data-fragment-index="1">
+							<pre class="fragment" data-fragment-index="0"><code data-trim data-noescape class="language-plaintext" >
+								<script type="text/template">
+								download -->   download -->   download -->
+								  ⌚        |    ⌚        |    ⌚        |
+								  ⌚ <------+    ⌚ <------+    ⌚ <------+   …
+								  conversion   conversion     conversion
+								  🔥             🔥             🔥
+								  ✅             ✅             ✅
+								</script>
+							</code></pre>
+						</div>
+						<ul class="fragment" data-fragment-index="1">
+							<li>OS scheduling overhead</li>
+							<li>hard to compose</li>
+							<li>Getting values out</li>
+							<aside class="notes">
+								There are better solutions than the example (like threadpools etc.), but these problems still hold.
+								Also the better solutions already are kind of like futures.
+							</aside>
+						</ul>
+					</section>
+					<section>
+						<h3>bad composability</h3>
+						<pre class="fragment shrink" data-fragment-index="0"><code data-trim data-noescape class="language-rust">
+							<script type="text/template">
+								type Gallery = Vec<Url>;
+
+								fn convert_gallery(gallery: Gallery) {
+									let mut handles = Vec::new();
+
+									for url in gallery.into_iter() {
+										handles.push(spawn(move || fetch_and_convert(url)));
+									}
+
+									handles.into_iter().for_each(JoinHandle::join);
+								}
+							</script>
+						</code></pre>
+						<div class="r-stack">
+						<div class="fragment shrink" data-fragment-index="1">
+							<pre class="fragment" data-fragment-index="0"><code data-trim data-noescape class="language-rust">
+								<script type="text/template">
+									fn convert_galleries(galleries: Vec<Gallery>) {
+										let mut handles = Vec::new();
+
+										for gallery in galleries.into_iter() {
+											handles.push(spawn(move || convert_gallery(gallery)));
+										}
+
+										handles.into_iter().for_each(JoinHandle::join);
+									}
+								</script>
+							</code></pre>
+						</div>
+						<p class="fragment" data-fragment-index="1">😢</p>
+						</div>
 					</section>
 				</section>
 			</div>
@@ -124,7 +195,7 @@
 		<script src="plugin/highlight/highlight.js"></script>
 		<script>
 			const highlight_plugin = RevealHighlight();
-			highlight_plugin.hljs.configure({tabReplace: '   '})
+			highlight_plugin.hljs.configure({tabReplace: '  '})
 
 			// More info about initialization & config:
 			// - https://revealjs.com/initialization/
