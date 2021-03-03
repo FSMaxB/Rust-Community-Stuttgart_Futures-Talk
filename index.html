@@ -44,7 +44,7 @@
 						<pre><code data-trim data-noescape class="language-rust" >
 							<script type="text/template">
 							fn fetch_and_convert(url: Url) -> Result {
-								let image = download(url);  // waiting for network
+								let image = download(url)?;  // waiting for network
 								convert(image)              // CPU intensive
 							}
 							</script>
@@ -81,7 +81,7 @@
 						<pre class="fragment shrink" data-fragment-index="0"><code data-trim data-noescape class="language-rust" >
 							<script type="text/template">
 							fn fetch_and_convert(url: Url) -> Result {
-								let image = download(url);  // waiting for network
+								let image = download(url)?;  // waiting for network
 								convert(image)              // CPU intensive
 							}
 							</script>
@@ -142,7 +142,7 @@
 						<ul class="fragment" data-fragment-index="1">
 							<li>OS scheduling overhead</li>
 							<li>hard to compose</li>
-							<li>Getting values out</li>
+							<li>collecting results</li>
 							<aside class="notes">
 								There are better solutions than the example (like threadpools etc.), but these problems still hold.
 								Also the better solutions already are kind of like futures.
@@ -184,6 +184,146 @@
 						</div>
 						<p class="fragment" data-fragment-index="1">😢</p>
 						</div>
+					</section>
+				</section>
+
+				<section>
+					<section>
+						<h2>Futures</h2>
+					</section>
+					<section>
+						<h3>async-await semantics</h3>
+						<div class="fragment shrink" data-fragment-index="0">
+							<pre><code data-trim data-noescape class="language-rust" >
+								<script type="text/template">
+								async fn download(url: Url) -> Result { … }
+								</script>
+							</code></pre>
+							<pre><code data-trim data-noescape class="language-rust" >
+								<script type="text/template">
+								async fn convert(image: Image) -> Result { … }
+								</script>
+							</code></pre>
+						</div>
+						<pre class="fragment" data-fragment-index="0"><code data-trim data-noescape class="language-rust" >
+							<script type="text/template">
+							async fn fetch_and_convert(url: Url) -> Result {
+								let image = download(url).await?;
+								convert(image).await
+							}
+							</script>
+						</code></pre>
+						<p class="fragment">suspended on await</p>
+					</section>
+					<section>
+						<h3>old syntax</h3>
+						<div class="fragment shrink" data-fragment-index="0">
+							<pre><code data-trim data-noescape class="language-rust" >
+								<script type="text/template">
+									fn download(url: Url) -> impl Future<Output = Result> { … }
+								</script>
+							</code></pre>
+							<pre><code data-trim data-noescape class="language-rust" >
+								<script type="text/template">
+									fn convert(image: Image) -> impl Future<Output = Result> { … }
+								</script>
+							</code></pre>
+						</div>
+						<pre class="fragment" data-fragment-index="0"><code data-trim data-noescape class="language-rust" >
+							<script type="text/template">
+								async fn fetch_and_convert(url: Url)
+										-> impl Future<Output = Result> {
+									download(url)
+										.and_then(|image| convert(image))
+								}
+							</script>
+						</code></pre>
+					</section>
+				</section>
+
+				<section>
+					<section>
+						<h2>implementations</h2>
+						<p>Ways this could be implemented</p>
+						<p>(and is, roughly, in many languages).</p>
+					</section>
+					<section>
+						<h3>callbacks</h3>
+
+						<div class="fragment shrink" data-fragment-index="0">
+							<pre><code data-trim data-noescape class="language-rust" >
+								<script type="text/template">
+									fn download(url: Url, callback: impl FnOnce(Image)) { … }
+								</script>
+							</code></pre>
+							<pre><code data-trim data-noescape class="language-rust" >
+								<script type="text/template">
+									fn convert(image: Image, callback: impl FnOnce(Converted)) { … }
+								</script>
+							</code></pre>
+							<small>without error handling for simplicity</small>
+						</div>
+						<pre class="fragment" data-fragment-index="0"><code data-trim data-noescape class="language-rust" >
+							<script type="text/template">
+								fn fetch_and_convert(url: Url, callback: impl FnOnce(Result)) {
+									download(url, move |image| {
+										convert(image, move |converted| {
+											callback(converted));
+										});
+									});
+								}
+							</script>
+						</code></pre>
+					</section>
+
+					<section>
+						<h3>wrapped callbacks</h3>
+						<pre><code data-trim data-noescape class="language-rust" >
+							<script type="text/template">
+								trait CallbackFuture {
+									type Output;
+
+									fn set_callback(
+										&mut self,
+										callback: Box<dyn FnOnce(Self::Output)>
+									);
+								}
+							</script>
+						</code></pre>
+
+						<pre><code data-trim data-noescape class="language-rust" >
+							<script type="text/template">
+								struct Download {
+									// …
+									callback: Option<Box<dyn FnOnce(Image)>>,
+								}
+							</script>
+						</code></pre>
+						<small>Actual implementation would be a bit tricky in rust.</small>
+
+					</section>
+
+					<section>
+						<h3>callback without data</h3>
+						<pre><code data-trim data-noescape class="language-rust" >
+							<script type="text/template">
+								trait Callback {
+									fn notify_ready(&mut self);
+								}
+							</script>
+						</code></pre>
+						<pre><code data-trim data-noescape class="language-rust" >
+							<script type="text/template">
+								trait CallbackFuture {
+									type Output;
+
+									fn set_callback(&mut self, callback: Box<dyn Callback>);
+									fn is_ready(&self) -> bool;
+									fn take_output(&mut self) -> Option<Self::Output>;
+								}
+							</script>
+						</code></pre>
+
 					</section>
 				</section>
 			</div>
