@@ -597,6 +597,110 @@
 						<p class="fragment">Still starting all at once though</p>
 					</section>
 				</section>
+
+				<section>
+					<section>
+						<h2>Streams</h2>
+						<p>Asynchronous iterator</p>
+					</section>
+					<section>
+						<h3>Stream</h3>
+						<div class="fragment shrink" data-fragment-index="0">
+							<pre><code data-trim data-noescape class="language-rust" >
+								<script type="text/template">
+									pub trait Future {
+										type Output;
+
+										pub fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>)
+											-> Poll<Self::Output>;
+									}
+								</script>
+							</code></pre>
+							<small><code>std::future::Future</code></small>
+						</div>
+						<div class="fragment" data-fragment-index="0">
+							<pre><code data-trim data-noescape class="language-rust">
+								<script type="text/template">
+									pub trait Stream {
+										type Item;
+
+										pub fn poll_next(
+											self: Pin<&mut Self>,
+											cx: &mut Context<'_>
+										) -> Poll<Option<Self::Item>>;
+
+										pub fn size_hint(&self) -> (usize, Option<usize>) { ... }
+									}
+								</script>
+							</code></pre>
+							<small><code>futures::stream::Stream</code></small>
+						</div>
+					</section>
+					<section>
+						<h3>Poll-Values</h3>
+						<ul>
+							<li><code>Poll::Pending</code>
+								<ul>
+									<li>same as <code>Future</code></li>
+								</ul>
+							</li>
+							<li><code>Poll::Ready(Some(…))</code>
+								<ul>
+									<li>next item (like <code>Iterator</code>)</li>
+								</ul>
+							</li>
+							<li><code>Poll::Ready(None)</code>
+								<ul>
+									<li><code>Stream</code> finished (like <code>Iterator</code>)</li>
+								</ul>
+							</li>
+						</ul>
+					</section>
+					<section>
+						<h3>Our example again</h3>
+						<pre class="fragment shrink" data-fragment-index="0"><code data-trim data-noescape class="language-rust">
+							<script type="text/template">
+								async fn fetch_and_convert(url: Url) -> Result<Converted> { … }
+							</script>
+						</code></pre>
+						<pre class="fragment" data-fragment-index="0"><code data-trim data-noescape class="language-rust">
+							<script type="text/template">
+								fn convert(urls: impl IntoIterator<Item = Url>)
+										-> impl Stream<Item = Result<Converted>> {
+									let iterator = urls.into_iter();
+									// Stream<Item = Url>
+									futures::stream::iter(iterator)
+										// Stream<Item = impl Future<Output = Result<Converted>>>
+										.map(|url| {
+											fetch_and_convert(url)
+										})
+										// Stream<Item = Result<Converted>>
+										.try_buffered(8) // convert 8 in parallel
+								}
+							</script>
+						</code></pre>
+					</section>
+				</section>
+
+				<section>
+					<section>
+						<h2>Conclusion</h2>
+						<ul>
+							<li>poll based</li>
+							<li>"zero overhead"</li>
+							<li>async-await as Generator</li>
+							<li><code>std::pin::Pin</code> for self references</li>
+							<li><code>Stream</code> as asynchronous <section>Iterator</section></li>
+						</ul>
+					</section>
+				</section>
+
+				<section>
+					<section>
+						<h2>End</h2>
+						<h3 class="fragment">Questions?</h3>
+					</section>
+				</section>
 			</div>
 		</div>
 
