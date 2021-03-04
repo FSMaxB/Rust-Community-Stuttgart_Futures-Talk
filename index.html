@@ -323,7 +323,126 @@
 								}
 							</script>
 						</code></pre>
+					</section>
+				</section>
 
+
+				<section>
+					<section>
+						<h2>Actual rust futures</h2>
+					</section>
+					<section>
+						<h3>Terminology</h3>
+						<ul>
+							<li class="fragment">Task
+								<ul>
+									<li>unit of execution</li>
+									<li>"scheduled future"</li>
+									<li>"green thread"</li>
+									<li>usually composition of multiple futures</li>
+								</ul>
+							</li>
+							<li class="fragment">Executor
+								<ul>
+									<li>runs futures as tasks</li>
+									<li>schedules</li>
+								</ul>
+							</li>
+						</ul>
+						<p class="fragment"><em>Futures</em> are <em>spawned</em> on <em>executors</em> to become <em>tasks</em>.</p>
+					</section>
+					<section>
+						<h3>Futures are polled</h3>
+						<pre><code data-trim data-noescape class="language-rust" >
+							<script type="text/template">
+								pub trait Future {
+									type Output;
+
+									pub fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>)
+										-> Poll<Self::Output>;
+								}
+							</script>
+						</code></pre>
+						<small><code>std::future::Future</code></small>
+
+						<pre><code data-trim data-noescape class="language-rust" >
+							<script type="text/template">
+								pub enum Poll<T> {
+									Ready(T),
+									Pending,
+								}
+							</script>
+						</code></pre>
+						<small><code>std::task::Poll</code></small>
+
+						<p class="fragment">Polling is like opening the door to check if the parcel has arrived.</p>
+					</section>
+
+					<section>
+						<h3>But where's the doorbell?</h3>
+						<div class="fragment">
+							<pre><code data-trim data-noescape class="language-rust" >
+								<script type="text/template">
+									impl Context {
+										pub fn waker(&self) -> &'a Waker { … }
+										// …
+									}
+								</script>
+							</code></pre>
+							<small><code>std::task::Context</code></small>
+						</div>
+						<div class="fragment">
+							<pre><code data-trim data-noescape class="language-rust" >
+								<script type="text/template">
+									impl Waker {
+										pub fn wake_by_ref(&self) { … }
+										// …
+									}
+								</script>
+							</code></pre>
+							<small><code>std::task::Waker</code></small>
+						</div>
+						<p class="fragment"><code>wake</code> is called once a task can make progress</pcl>
+					</section>
+
+					<section>
+						<h3>Polling a task to completion</h3>
+						<p>Example:</p>
+						<pre><code data-trim data-noescape class="language-plaintext" >
+								<script type="text/template">
+									Executor              Task
+									    ----- poll -------->
+									    <---- pending ------
+									           ⌚
+									    <---- wake --------⚡  (asynchronous event)
+									    ----- poll -------->  (poll triggers internal progress)
+									    <---- pending ------
+									           ⌚
+									           ⁞
+									    <---- wake --------⚡  (asynchronous event)
+									    ----- poll -------->  (poll triggers finish)
+									    <---- ready(…) -----
+									    ✅
+								</script>
+						</code></pre>
+						<p class="fragment">⚠️ pending futures must call the waker again ⚠️</p>
+					</section>
+
+					<section>
+						<h3>Tasks as state machines</h3>
+						<img src="state-machine.png"/>
+					</section>
+
+					<section>
+						<h3>"Zero overhead"</h3>
+						<ul>
+							<li>No heap allocations required
+								<ul>
+									<li>supports embedded</li>
+								</ul>
+							</li>
+							<li>Context passed around as single pointer</li>
+						</ul>
 					</section>
 				</section>
 			</div>
