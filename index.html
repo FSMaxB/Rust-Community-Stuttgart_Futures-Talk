@@ -436,12 +436,97 @@
 					<section>
 						<h3>"Zero overhead"</h3>
 						<ul>
-							<li>No heap allocations required
+							<li>No heap allocations required <small>(usually one per task though)</small>
 								<ul>
 									<li>supports embedded</li>
 								</ul>
 							</li>
+							<li>composition as one struct</li>
+							<li>inlining across poll-methods</li>
 							<li>Context passed around as single pointer</li>
+						</ul>
+					</section>
+				</section>
+
+
+				<section>
+					<section>
+						<h2>Async generators</h2>
+					</section>
+					<section>
+						<h3>enum equivalent</h3>
+						<pre><code data-trim data-noescape class="language-rust" >
+								<script type="text/template">
+									async fn generator(parameter: Parameter) -> Result {
+										// before await
+										operation(parameter).await
+										// after await
+									}
+								</script>
+						</code></pre>
+
+						<pre><code data-trim data-noescape class="language-rust" >
+								<script type="text/template">
+									enum Generator {
+										New(Parameter),
+										// OperationFuture was returned by "operation"
+										Operation(OperationFuture),
+										// probably already contained in "OperationFuture",
+										// though explicitly listed here
+										Ready(Result),
+										Finished,
+									}
+								</script>
+						</code></pre>
+						<small>rough translation</small>
+					</section>
+					<section>
+						<h3>lifetime across await</h3>
+						<pre><code data-trim data-noescape class="language-rust" >
+								<script type="text/template">
+									async fn generator(parameter: Parameter) -> Result {
+										let debug = format!("{:?}", parameter);
+										let result = operation(parameter).await;
+										println!("Parameters: {}", debug);
+										result
+									}
+								</script>
+						</code></pre>
+
+						<p class="fragment">Borrow across await point. Generator is borrowing from itself.</p>
+						<p class="fragment">Usually impossible in rust, because <em>move</em> would invalidate pointers.</p>
+					</section>
+					<section>
+						<h3>Short reminder</h3>
+						<pre><code data-trim data-noescape class="language-rust" >
+							<script type="text/template">
+								pub trait Future {
+									type Output;
+
+									pub fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>)
+										-> Poll<Self::Output>;
+								}
+							</script>
+						</code></pre>
+						<small><code>std::future::Future</code></small>
+						</code></pre>
+					</section>
+					<section>
+						<h3><code>std::pin::Pin</code> prevents move!</h3>
+						<ul>
+							<li class="fragment">Wraps pointer, not Value</li>
+							<li class="fragment"><code>Pin</code> of self-referential type:
+								<ul>
+									<li>only constructible with <code>unsafe</code></li>
+									<li><code>&mut</code> only via <code>unsafe</code></li>
+								</ul>
+							</li>
+							<li class="fragment"><code>Unpin</code> marker auto-trait
+								<ul>
+									<li><code>Pin<&mut></code> constructible in safe rust</li>
+									<li><code>&mut</code> in safe rust</li>
+								</ul>
+							</li>
 						</ul>
 					</section>
 				</section>
