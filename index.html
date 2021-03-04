@@ -478,7 +478,7 @@
 									}
 								</script>
 						</code></pre>
-						<small>rough translation</small>
+						<small>handwavy translation</small>
 					</section>
 					<section>
 						<h3>lifetime across await</h3>
@@ -528,6 +528,73 @@
 								</ul>
 							</li>
 						</ul>
+					</section>
+				</section>
+				<section>
+					<section>
+						<h2>Using futures</h2>
+					</section>
+					<section>
+						<h3>Runtime libraries</h3>
+						<ul>
+							<li>tokio
+								<ul>
+									<li>most popular</li>
+								</ul>
+							</li>
+							<li>async-std
+								<ul>
+									<li>mimics standard library</li>
+								</ul>
+							</li>
+							<li>smol
+								<ul>
+									<li>minimalistic</li>
+								</ul>
+							</li>
+						</ul>
+					</section>
+					<section>
+						<h3>futures crate</h3>
+						<ul>
+							<li>origin of the <code>Future</code> trait</li>
+							<li><code>Stream</code> and <code>Sink</code> traits</li>
+							<li>combinators</li>
+							<li>channels</li>
+							<li>useful macros</li>
+						</ul>
+					</section>
+					<section>
+						<h3>pin_project</h3>
+						<p>Useful for <code>Pin</code> without <code>unsafe</code> when manually implementing the <code>Future</code> trait.</p>
+					</section>
+				</section>
+
+				<section>
+					<section>
+						<h2>Back to our example</h2>
+						<p>Downloading and converting images.</p>
+					</section>
+					<section>
+						<h2>port of thread-solution</h2>
+						<pre class="fragment shrink" data-fragment-index="0"><code data-trim data-noescape class="language-rust">
+							<script type="text/template">
+								async fn fetch_and_convert(url: Url) -> Result<Converted> { … }
+							</script>
+						</code></pre>
+						<pre class="fragment" data-fragment-index="0"><code data-trim data-noescape class="language-rust">
+							<script type="text/template">
+								async fn convert(urls: Vec<Url>) -> Result<Vec<Converted>> {
+									let futures = gallery
+										.into_iter()
+										.map(|url| {
+											fetch_and_convert(url)
+										});
+									futures::join_all(futures).await
+								}
+							</script>
+						</code></pre>
+						<p class="fragment">Still starting all at once though</p>
 					</section>
 				</section>
 			</div>
