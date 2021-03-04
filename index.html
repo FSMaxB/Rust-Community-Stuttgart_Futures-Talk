@@ -35,7 +35,7 @@
 					<section>
 						<h2>Example</h2>
 						<ol>
-							<li><em>download</em> image</li>
+							<li class="fragment"><em>download</em> image</li>
 							<li class="fragment"><em>convert</em> into different format</li>
 						</ol>
 					</section>
@@ -52,7 +52,7 @@
 					</section>
 					<section>
 						<h3>Synchronously</h3>
-						<pre class="fragment shrink" data-fragment-index="0"><code data-trim data-noescape class="language-plaintext" >
+						<pre><code data-trim data-noescape class="language-plaintext" >
 							<script type="text/template">
 							download -------->
 							  ⌚              |
@@ -67,11 +67,13 @@
 								✅
 							</script>
 						</code></pre>
-						<ul class="fragment" data-fragment-index="0">
-							<li>not bad so far</li>
-							<li>need to wait anyways(?)</li>
-							<li>might block though</li>
-						</ul>
+						<aside class="notes">
+							<ul>
+								<li>not bad so far</li>
+								<li>need to wait anyways(?)</li>
+								<li>might block though</li>
+							</ul>
+						</aside>
 						<aside class="notes">
 							Might block GUI thread or server backend.
 						</aside>
@@ -438,12 +440,12 @@
 						<ul>
 							<li>No heap allocations required <small>(usually one per task though)</small>
 								<ul>
-									<li>supports embedded</li>
+									<li>supports embedded development</li>
 								</ul>
 							</li>
 							<li>composition as one struct</li>
 							<li>inlining across poll-methods</li>
-							<li>Context passed around as single pointer</li>
+							<li><code>Context</code> passed around as single pointer</li>
 						</ul>
 					</section>
 				</section>
@@ -465,20 +467,22 @@
 								</script>
 						</code></pre>
 
-						<pre><code data-trim data-noescape class="language-rust" >
-								<script type="text/template">
-									enum Generator {
-										New(Parameter),
-										// OperationFuture was returned by "operation"
-										Operation(OperationFuture),
-										// probably already contained in "OperationFuture",
-										// though explicitly listed here
-										Ready(Result),
-										Finished,
-									}
-								</script>
-						</code></pre>
-						<small>handwavy translation</small>
+						<div class="fragment">
+							<pre><code data-trim data-noescape class="language-rust" >
+									<script type="text/template">
+										enum Generator {
+											New(Parameter),
+											// OperationFuture was returned by "operation"
+											Operation(OperationFuture),
+											// probably already contained in "OperationFuture",
+											// though explicitly listed here
+											Ready(Result),
+											Finished,
+										}
+									</script>
+							</code></pre>
+							<small>handwavy translation</small>
+						</div>
 					</section>
 					<section>
 						<h3>lifetime across await</h3>
